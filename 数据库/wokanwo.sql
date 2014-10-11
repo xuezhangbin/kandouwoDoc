@@ -143,6 +143,7 @@ CREATE TABLE IF NOT EXISTS `kandouwo`.`Game` (
   `parent_id` BIGINT NULL COMMENT '父类游戏id',
   `name` VARCHAR(45) NULL COMMENT '游戏名称',
   `desc` VARCHAR(255) NULL COMMENT '游戏的描述',
+  `interest_id` BIGINT NULL COMMENT '喜爱的游戏（模式），该字段仅在parent_id为空时有效',
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
 COMMENT = '游戏';
@@ -152,13 +153,33 @@ COMMENT = '游戏';
 -- Table `kandouwo`.`Game_Guess_Book`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `kandouwo`.`Game_Guess_Book` (
-  `id` BIGINT NOT NULL COMMENT '游戏id',
-  `image` MEDIUMBLOB NULL COMMENT '图片',
-  `book_name` VARCHAR(45) NULL COMMENT '书名',
-  PRIMARY KEY (`id`),
-  CONSTRAINT `id`
-    FOREIGN KEY (`id`)
+  `game_id` BIGINT NOT NULL COMMENT '游戏id',
+  `life_time` INT NULL COMMENT '猜书的最长时间',
+  PRIMARY KEY (`game_id`),
+  CONSTRAINT `game_book_game_id`
+    FOREIGN KEY (`game_id`)
     REFERENCES `kandouwo`.`Game` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `kandouwo`.`Game_Guess_Book_Detail`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `kandouwo`.`Game_Guess_Book_Detail` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '书的id（可能需要去掉自增标记）',
+  `game_id` BIGINT NULL COMMENT '游戏id',
+  `image` MEDIUMBLOB NULL COMMENT '图像',
+  `book_name` VARCHAR(45) NULL COMMENT '书名',
+  `book_type` INT NULL,
+  `guess_right` INT NULL COMMENT '概述猜对次数',
+  `guess_count` INT NULL COMMENT '该书被猜次数',
+  PRIMARY KEY (`id`),
+  INDEX `guess_bool_detail_idx` (`game_id` ASC),
+  CONSTRAINT `guess_bool_detail`
+    FOREIGN KEY (`game_id`)
+    REFERENCES `kandouwo`.`Game_Guess_Book` (`game_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -171,6 +192,8 @@ CREATE TABLE IF NOT EXISTS `kandouwo`.`Game_Guess_Book_Data` (
   `id` BIGINT NOT NULL COMMENT '用户id',
   `guess_book_id` BIGINT NULL COMMENT '所猜书的id',
   `result` TINYINT(1) NULL COMMENT '猜书的结果(对,错)',
+  `start_time` DATETIME NULL COMMENT '开始游戏的时间',
+  `end_time` DATETIME NULL COMMENT '结束游戏的时间',
   PRIMARY KEY (`id`),
   INDEX `guess_book_id_idx` (`guess_book_id` ASC),
   CONSTRAINT `guess_user_id`
@@ -180,7 +203,7 @@ CREATE TABLE IF NOT EXISTS `kandouwo`.`Game_Guess_Book_Data` (
     ON UPDATE NO ACTION,
   CONSTRAINT `guess_book_id`
     FOREIGN KEY (`guess_book_id`)
-    REFERENCES `kandouwo`.`Game_Guess_Book` (`id`)
+    REFERENCES `kandouwo`.`Game_Guess_Book_Detail` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -421,20 +444,6 @@ CREATE TABLE IF NOT EXISTS `kandouwo`.`Review_Rate_Range` (
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 
-USE `kandouwo` ;
-
--- -----------------------------------------------------
--- Placeholder table for view `kandouwo`.`Hot_Download`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `kandouwo`.`Hot_Download` (`id` INT, `douban_id` INT, `isbn10` INT, `isbn13` INT, `type` INT, `title` INT, `origin_title` INT, `alt_title` INT, `sub_title` INT, `alt` INT, `author` INT, `translator` INT, `publisher` INT, `pubdate` INT, `binding` INT, `tags` INT, `rate` INT, `rate_num` INT, `price` INT, `pages` INT, `words` INT, `click_num` INT, `download_num` INT, `downloadable` INT, `listenable` INT, `image_normal` INT, `image_small` INT, `image_big` INT, `author_inro` INT, `summary` INT, `catalog` INT);
-
--- -----------------------------------------------------
--- View `kandouwo`.`Hot_Download`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `kandouwo`.`Hot_Download`;
-USE `kandouwo`;
-CREATE  OR REPLACE VIEW `Hot_Download` AS 
-	select * from Book order by download_num desc limit 10;
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
